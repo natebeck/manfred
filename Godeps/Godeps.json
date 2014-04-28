@@ -1,0 +1,49 @@
+{
+	"ImportPath": "github.com/natebeck/manfred",
+	"GoVersion": "go1.2",
+	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/goauth2/oauth",
+			"Comment": "weekly-40",
+			"Rev": "5877582f0cb070bc21b199dab5e7d18fb546444a"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/envy/autoload",
+			"Rev": "25e5d50415d96a367adac8bd567608d78a50bef0"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/envy/lib",
+			"Rev": "25e5d50415d96a367adac8bd567608d78a50bef0"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/inject",
+			"Comment": "v1.0-rc1",
+			"Rev": "37d7f8432a3e684eef9b2edece76bdfa6ac85b39"
+		},
+		{
+			"ImportPath": "github.com/go-martini/martini",
+			"Comment": "v1.0-rc1",
+			"Rev": "de643861770082784ad14cba4557ad68568dcc7b"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Rev": "1be7a086a5fd6440ef16fe96baeda0c78282b980"
+		},
+		{
+			"ImportPath": "github.com/gorilla/securecookie",
+			"Rev": "1b0c7f6e9ab3d7f500fd7d50c7ad835ff428139b"
+		},
+		{
+			"ImportPath": "github.com/gorilla/sessions",
+			"Rev": "c5bbe9d3d3c906d01de60189e5bfbba1d8164a80"
+		},
+		{
+			"ImportPath": "github.com/martini-contrib/oauth2",
+			"Rev": "2571af4ac03aefbf372bacf2172da1367f4ca988"
+		},
+		{
+			"ImportPath": "github.com/martini-contrib/sessions",
+			"Rev": "5fb70e24200d12981048814d5f1732a59671fae4"
+		}
+	]
+}
