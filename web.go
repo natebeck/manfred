@@ -33,7 +33,7 @@ func main() {
 	}))
 
 	m.Get("/", oauth2.LoginRequired, func(tokens oauth2.Tokens, r render.Render) {
-		r.HTML(200, "home", "Brad")
+		r.HTML(200, "home", "Friend")
 	})
 
 	m.Get("/create", oauth2.LoginRequired, func() string {
