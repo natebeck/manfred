@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	_ "github.com/codegangsta/envy/autoload"
 	"github.com/codegangsta/envy/lib"
@@ -10,6 +11,7 @@ import (
 	"github.com/martini-contrib/oauth2"
 	"github.com/martini-contrib/render"
 	"github.com/martini-contrib/sessions"
+	"github.com/soveran/redisurl"
 	"net/http"
 )
 
@@ -39,7 +41,7 @@ func main() {
 	}))
 
 	// Services
-	c, err := redis.Dial("tcp", RedisURL)
+	c, err := redisurl.ConnectToURL(RedisURL)
 	if err != nil {
 		panic(err)
 	}
@@ -57,7 +59,19 @@ func main() {
 
 	m.Post("/createGame", oauth2.LoginRequired, func(c redis.Conn, r render.Render, req *http.Request) {
 		uuid := uniuri.NewLen(12)
-		c.Do("SET", uuid, "Hello World!")
+		mg := ManfredGame{}
+		mg.UUID = uuid
+		mg.StreamerName = "ApDrop"
+		mg.Title = req.PostFormValue("title")
+		mg.Game = req.PostFormValue("game")
+		// mg.MustFollow = req.PostFormValue("mustFollow")
+		// mg.MustSub = req.PostFormValue("mustSub")
+
+		j, err := json.Marshal(mg)
+		if err != nil {
+			panic(err)
+		}
+		c.Do("SET", uuid, j)
 		c.Do("EXPIRE", uuid, 86400) // Expire after 1 day
 		r.Redirect("/thanks/" + uuid)
 	})
@@ -80,4 +94,10 @@ func TwitchOAuth(opts *oauth2.Options) martini.Handler {
 }
 
 type ManfredGame struct {
+	UUID         string
+	StreamerName string
+	Title        string
+	Game         string
+	MustFollow   bool
+	MustSub      bool
 }
