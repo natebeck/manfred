@@ -1,0 +1,50 @@
+<h2>Create a Viewer Game</h2>
+
+<br /><br />
+<form name="createGame" action="/createGame" method="post" class="form-horizontal">
+
+  <fieldset>
+    <div class="form-group">
+      <label for="inputTitle" class="col-lg-2 control-label">Title</label>
+      <div class="col-lg-10">
+      <input type="text" class="form-control" id="inputTitle" placeholder="Game Title">
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="select" class="col-lg-2 control-label">Game</label>
+      <div class="col-lg-10">
+      <select class="form-control" id="select">
+        <option>League of Legends</option>
+        <option>Minecraft</option>
+        <option>Starcraft 2</option>
+        <option>Diablo 3</option>
+        <option>Hearthstone</option>
+        <option>Other</option>
+      </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-lg-2 control-label">Player Requirements</label>
+      <div class="col-lg-10">
+      <div class="checkbox">
+        <label>
+        <input type="checkbox"> Must Follow
+        </label>
+      </div>
+
+      <div class="checkbox">
+        <label>
+        <input type="checkbox"> Must Subscribe
+        </label>
+      </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="col-lg-10 col-lg-offset-2">
+      <button type="submit" class="btn btn-primary">Submit</button>
+      </div>
+    </div>
+  </fieldset>
+</form>
