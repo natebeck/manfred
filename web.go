@@ -12,6 +12,8 @@ import (
 	"github.com/martini-contrib/render"
 	"github.com/martini-contrib/sessions"
 	"github.com/soveran/redisurl"
+	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -41,16 +43,28 @@ func main() {
 	}))
 
 	// Services
+	// Redis
 	c, err := redisurl.ConnectToURL(RedisURL)
 	if err != nil {
 		panic(err)
 	}
-
 	m.Map(c)
 
 	// Routes
-	m.Get("/", oauth2.LoginRequired, func(r render.Render) {
-		r.HTML(200, "home", "Friend")
+	m.Get("/", oauth2.LoginRequired, func(s sessions.Session, t oauth2.Tokens, r render.Render) {
+
+		userName := s.Get("userName")
+		if userName == nil {
+			u, err := GetTwitchUser(t.Access())
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			s.Set("userName", u.DisplayName)
+			userName = u.DisplayName
+		}
+
+		r.HTML(200, "home", userName)
 	})
 
 	m.Get("/newGame", oauth2.LoginRequired, func(r render.Render) {
@@ -58,21 +72,21 @@ func main() {
 	})
 
 	m.Post("/createGame", oauth2.LoginRequired, func(c redis.Conn, r render.Render, req *http.Request) {
-		uuid := uniuri.NewLen(12)
+		uuid := uniuri.NewLen(8)
 		mg := ManfredGame{}
 		mg.UUID = uuid
-		mg.StreamerName = "ApDrop"
-		mg.Title = req.PostFormValue("title")
+		mg.StreamerName = "Streamer"
+		mg.Description = req.PostFormValue("description")
 		mg.Game = req.PostFormValue("game")
 		// mg.MustFollow = req.PostFormValue("mustFollow")
 		// mg.MustSub = req.PostFormValue("mustSub")
 
 		j, err := json.Marshal(mg)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		c.Do("SET", uuid, j)
-		c.Do("EXPIRE", uuid, 86400) // Expire after 1 day
+		c.Do("EXPIRE", uuid, 43200) // Expire after 1 day
 		r.Redirect("/thanks/" + uuid)
 	})
 
@@ -80,11 +94,33 @@ func main() {
 		r.HTML(200, "thanks", fmt.Sprintf("http://%s/play/%s", req.Host, p["gameId"]))
 	})
 
-	m.Get("/play/:gameId", oauth2.LoginRequired, func(tokens oauth2.Tokens, r render.Render, p martini.Params) {
+	m.Get("/play/:gameId", oauth2.LoginRequired, func(t oauth2.Tokens, r render.Render, p martini.Params) {
 		r.HTML(200, "play", nil)
 	})
 
 	m.Run()
+}
+
+func GetTwitchUser(token string) (TwitchUser, error) {
+
+	url := "https://api.twitch.tv/kraken/user"
+
+	req, _ := http.NewRequest("GET", url, nil)
+
+	req.Header.Set("Client-ID", TwitchClient)
+	req.Header.Set("Authorization", "OAuth "+token)
+	req.Header.Set("Accept", "application/vnd.twitchtv.v3+json")
+
+	client := &http.Client{}
+	resp, _ := client.Do(req)
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	var user TwitchUser
+	json.Unmarshal(body, &user)
+
+	return user, nil
 }
 
 func TwitchOAuth(opts *oauth2.Options) martini.Handler {
@@ -93,10 +129,19 @@ func TwitchOAuth(opts *oauth2.Options) martini.Handler {
 	return oauth2.NewOAuth2Provider(opts)
 }
 
+type TwitchUser struct {
+	DisplayName string `json:"display_name"`
+	Logo        string `json:"logo"`
+	Id          string `json:"_id"`
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Email       string `json:"email"`
+}
+
 type ManfredGame struct {
 	UUID         string
 	StreamerName string
-	Title        string
+	Description  string
 	Game         string
 	MustFollow   bool
 	MustSub      bool
