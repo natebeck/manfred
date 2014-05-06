@@ -118,7 +118,10 @@ func GetTwitchUser(token string) (TwitchUser, error) {
 	body, _ := ioutil.ReadAll(resp.Body)
 
 	var user TwitchUser
-	json.Unmarshal(body, &user)
+	err := json.Unmarshal(body, &user)
+  if err != nil {
+    return user, err
+  }
 
 	return user, nil
 }
