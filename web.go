@@ -119,9 +119,9 @@ func GetTwitchUser(token string) (TwitchUser, error) {
 
 	var user TwitchUser
 	err := json.Unmarshal(body, &user)
-  if err != nil {
-    return user, err
-  }
+	if err != nil {
+		return user, err
+	}
 
 	return user, nil
 }
