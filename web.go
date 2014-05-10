@@ -1,4 +1,4 @@
-package main
+package manfred
 
 import (
 	"encoding/json"
@@ -64,15 +64,11 @@ func main() {
 			userName = u.DisplayName
 		}
 
-		templateData := TemplateData{}
-		templateData.Name = userName.(string)
-		r.HTML(200, "home", templateData)
+		r.HTML(200, "home", NewTemplateData(s))
 	})
 
 	m.Get("/newGame", oauth2.LoginRequired, func(s sessions.Session, r render.Render) {
-		templateData := TemplateData{}
-		templateData.Name = s.Get("userName").(string)
-		r.HTML(200, "newGame", templateData)
+		r.HTML(200, "newGame", NewTemplateData(s))
 	})
 
 	m.Post("/createGame", oauth2.LoginRequired, func(c redis.Conn, t oauth2.Tokens, r render.Render, req *http.Request) {
@@ -102,30 +98,18 @@ func main() {
 	})
 
 	m.Get("/thanks/:gameId", oauth2.LoginRequired, func(s sessions.Session, r render.Render, p martini.Params, req *http.Request) {
-		templateData := TemplateData{}
-		templateData.Name = s.Get("userName").(string)
+		templateData := NewTemplateData(s)
 		templateData.Data = fmt.Sprintf("http://%s/play/%s", req.Host, p["gameId"])
 		r.HTML(200, "thanks", templateData)
 	})
 
 	m.Get("/play/:gameId", oauth2.LoginRequired, func(s sessions.Session, t oauth2.Tokens, r render.Render, p martini.Params) {
-		var game ManfredGame
 		key := GameKey(p["gameId"])
-		value, err := c.Do("GET", key)
+		game := LoadManfredGame(key, c)
 
-		if err != nil {
-			log.Fatal(err)
-		}
+		r.HTML(404, "missingGame", nil)
 
-		if value == nil {
-			r.HTML(404, "missingGame", nil)
-			return
-		}
-
-		err = json.Unmarshal(value.([]byte), &game)
-
-		templateData := TemplateData{}
-		templateData.Name = s.Get("userName").(string)
+		templateData := NewTemplateData(s)
 		templateData.Data = game
 		r.HTML(200, "play", templateData)
 	})
@@ -164,10 +148,6 @@ func TwitchOAuth(opts *oauth2.Options) martini.Handler {
 	return oauth2.NewOAuth2Provider(opts)
 }
 
-func GameKey(id string) string {
-	return "game:" + id
-}
-
 type TwitchUser struct {
 	DisplayName string `json:"display_name"`
 	Logo        string `json:"logo"`
@@ -177,13 +157,10 @@ type TwitchUser struct {
 	Email       string `json:"email"`
 }
 
-type ManfredGame struct {
-	UUID         string
-	StreamerName string
-	Description  string
-	Game         string
-	MustFollow   bool
-	MustSub      bool
+func NewTemplateData(s sessions.Session) TemplateData {
+	return TemplateData{
+		Name: s.Get("userName").(string),
+	}
 }
 
 type TemplateData struct {
