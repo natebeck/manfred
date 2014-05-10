@@ -135,7 +135,7 @@ func TwitchOAuth(opts *oauth2.Options) martini.Handler {
 type TwitchUser struct {
 	DisplayName string `json:"display_name"`
 	Logo        string `json:"logo"`
-	Id          string `json:"_id"`
+	Id          int64  `json:"_id"`
 	Name        string `json:"name"`
 	Type        string `json:"type"`
 	Email       string `json:"email"`
