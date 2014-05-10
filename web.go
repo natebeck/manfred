@@ -12,9 +12,9 @@ import (
 	"github.com/martini-contrib/render"
 	"github.com/martini-contrib/sessions"
 	"github.com/soveran/redisurl"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 var TwitchClient = envy.MustGet("TWITCH_CLIENT")
@@ -53,16 +53,7 @@ func main() {
 	// Routes
 	m.Get("/", oauth2.LoginRequired, func(s sessions.Session, t oauth2.Tokens, r render.Render) {
 
-		userName := s.Get("userName")
-		if userName == nil {
-			u, err := GetTwitchUser(t.Access())
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			s.Set("userName", u.DisplayName)
-			userName = u.DisplayName
-		}
+		EnsureSessionVariables(s, t)
 
 		r.HTML(200, "home", NewTemplateData(s))
 	})
@@ -111,62 +102,119 @@ func main() {
 	})
 
 	m.Get("/play/:gameId", oauth2.LoginRequired, func(s sessions.Session, t oauth2.Tokens, r render.Render, p martini.Params) {
+		EnsureSessionVariables(s, t)
 		templateData := NewTemplateData(s)
 
-		key := GameKey(p["gameId"])
+		gameKey := GameKey(p["gameId"])
+		game := LoadManfredGame(gameKey, c)
 
-		game := LoadManfredGame(key, c)
-		if game != nil {
-			game.AddPlayer(s.Get("userName").(string), c) // This should be the saved handle for the user, but just use this for now
+		playerKey := TwitchUserKey(strconv.FormatInt(s.Get("twitchId").(int64), 10)) // There's got to be a better way to do this...
+		player := LoadManfredPlayer(playerKey, c)
 
-			templateData.Data = game
-			r.HTML(200, "play", templateData)
+		setupUrl := "/play/" + p["gameId"] + "/setup"
+
+		if game == nil {
+			r.HTML(404, "missing_game", templateData)
+			return
+		}
+
+		if player == nil {
+			r.Redirect(setupUrl)
+			return
+		}
+
+		handle := player.Handles[game.Game]
+
+		log.Println("Here be the handle! " + handle)
+		// How to check if the handle is not present in the Handles map...
+		//if player == nil {
+		//	r.Redirect(setupUrl)
+		//	return
+		//}
+
+		game.AddPlayer(handle, c) // This should be the saved handle for the user, but just use this for now
+
+		templateData.Data = struct {
+			Game   ManfredGame
+			Handle string
+			SetupUrl string
+		}{*game, handle, setupUrl}
+		r.HTML(200, "play", templateData)
+	})
+
+	m.Get("/play/:gameId/setup", oauth2.LoginRequired, func(s sessions.Session, t oauth2.Tokens, r render.Render, p martini.Params) {
+		EnsureSessionVariables(s, t)
+
+		templateData := NewTemplateData(s)
+
+		gameKey := GameKey(p["gameId"])
+		game := LoadManfredGame(gameKey, c)
+
+		playerKey := TwitchUserKey(strconv.FormatInt(s.Get("twitchId").(int64), 10)) // There's got to be a better way to do this...
+		player := LoadManfredPlayer(playerKey, c)
+
+		currentHandle := ""
+
+		if game == nil {
+			r.HTML(404, "missing_game", templateData)
+			return
+		}
+
+		if player != nil {
+			currentHandle = player.Handles[game.Game]
+		}
+
+		templateData.Data = struct {
+			Game          ManfredGame
+			CurrentHandle string
+		}{*game, currentHandle}
+		r.HTML(200, "setup_player", templateData)
+	})
+
+	m.Post("/updateHandle", oauth2.LoginRequired, func(c redis.Conn, t oauth2.Tokens, r render.Render, req *http.Request, s sessions.Session) {
+
+		playerKey := TwitchUserKey(strconv.FormatInt(s.Get("twitchId").(int64), 10)) // There's got to be a better way to do this...
+		player := LoadManfredPlayer(playerKey, c)
+
+		if player == nil {
+			player = new(ManfredPlayer)
+			player.Handles = make(map[string]string)
+		}
+
+		player.Handles[req.PostFormValue("game")] = req.PostFormValue("handle") // Is there some sort of validation / santization we should be doing here?
+
+		SaveManfredPlayer(*player, playerKey, c)
+
+		gameId := req.PostFormValue("gameId")
+
+		if gameId == "" {
+			r.Redirect("/settings")
 		} else {
-			r.HTML(404, "missingGame", templateData)
+			r.Redirect("/play/" + gameId)
 		}
 	})
 
 	m.Run()
 }
 
-func GetTwitchUser(token string) (TwitchUser, error) {
+func EnsureSessionVariables(s sessions.Session, t oauth2.Tokens) {
+	userName := s.Get("userName")
+	twitchId := s.Get("twitchId")
+	if userName == nil || twitchId == nil {
+		u, err := GetTwitchUser(t.Access())
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	url := "https://api.twitch.tv/kraken/user"
-
-	req, _ := http.NewRequest("GET", url, nil)
-
-	req.Header.Set("Client-ID", TwitchClient)
-	req.Header.Set("Authorization", "OAuth "+token)
-	req.Header.Set("Accept", "application/vnd.twitchtv.v3+json")
-
-	client := &http.Client{}
-	resp, _ := client.Do(req)
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	var user TwitchUser
-	err := json.Unmarshal(body, &user)
-	if err != nil {
-		return user, err
+		s.Set("userName", u.DisplayName)
+		s.Set("twitchId", u.Id)
 	}
-
-	return user, nil
 }
 
 func TwitchOAuth(opts *oauth2.Options) martini.Handler {
 	opts.AuthUrl = "https://api.twitch.tv/kraken/oauth2/authorize"
 	opts.TokenUrl = "https://api.twitch.tv/kraken/oauth2/token"
 	return oauth2.NewOAuth2Provider(opts)
-}
-
-type TwitchUser struct {
-	DisplayName string `json:"display_name"`
-	Logo        string `json:"logo"`
-	Id          int64  `json:"_id"`
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	Email       string `json:"email"`
 }
 
 func NewTemplateData(s sessions.Session) TemplateData {

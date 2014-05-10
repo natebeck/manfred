@@ -1,5 +1,7 @@
-<h2>You are in the list to play {{.Data.Game}} with {{.Data.StreamerName}}</h2>
+<h2>You are in the list to play {{.Data.Game.Game}} with {{.Data.Game.StreamerName}}</h2>
 
-<p>{{.Data.Description}}</p>
+<p>{{.Data.Game.Description}}</p>
+
+<p>Current Handle for {{.Data.Game.Game}}: {{.Data.Handle}} <a href="{{.Data.SetupUrl}}">[change]</a></p>
 
 <p>Good Luck! Get logged into the game and get ready to play!</p>
