@@ -3,7 +3,16 @@
 <div class="row">
   <div class="col-lg-1"></div>
   <div class="col-lg-10">
-    <input id="urlTI" type="text" class="form-control" style="text-align: center" value="{{ .Data }}" disabled>
+    <input id="urlTI" type="text" class="form-control" style="text-align: center" value="{{ .Data.GameUrl }}" disabled>
   </div>
   <div class="col-lg-1"></div>
 <div>
+
+<div class="row">
+  <div class="col-lg-1"></div>
+  <div class="col-lg-10">
+    <h3>Players Ready: {{ .Data.PlayerCount }}</h3>
+  </div>
+  <div class="col-lg-1"></div>
+<div>
+

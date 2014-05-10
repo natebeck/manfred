@@ -1,4 +1,4 @@
-package manfred
+package main
 
 import (
 	"encoding/json"
@@ -21,9 +21,34 @@ type ManfredGame struct {
 	MustSub      bool
 }
 
-func LoadManfredGame(key GameKey, c redis.Conn) ManfredGame {
-	var game ManfredGame
+func (g ManfredGame) GetGameKey() (key GameKey) {
+	return GameKey(g.UUID)
+}
 
+func (g ManfredGame) GetPlayersSetKey() (key string) {
+	return "game:" + g.UUID + ":players"
+}
+
+func (g ManfredGame) AddPlayer(handle string, c redis.Conn) {
+	_, err := c.Do("SADD", g.GetPlayersSetKey(), handle)
+	c.Do("EXPIRE", g.GetPlayersSetKey(), 43200) // Expire after 1 day
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (g ManfredGame) CountPlayersReady(c redis.Conn) int64 {
+	resp, err := c.Do("SCARD", g.GetPlayersSetKey())
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return resp.(int64)
+}
+
+func LoadManfredGame(key GameKey, c redis.Conn) (game *ManfredGame) {
 	value, err := c.Do("GET", key)
 	if err != nil {
 		log.Fatal(err)

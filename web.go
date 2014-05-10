@@ -1,4 +1,4 @@
-package manfred
+package main
 
 import (
 	"encoding/json"
@@ -98,20 +98,32 @@ func main() {
 	})
 
 	m.Get("/thanks/:gameId", oauth2.LoginRequired, func(s sessions.Session, r render.Render, p martini.Params, req *http.Request) {
+		key := GameKey(p["gameId"])
+		game := LoadManfredGame(key, c)
+
 		templateData := NewTemplateData(s)
-		templateData.Data = fmt.Sprintf("http://%s/play/%s", req.Host, p["gameId"])
+		templateData.Data = struct {
+			GameUrl     string
+			PlayerCount int64
+		}{fmt.Sprintf("http://%s/play/%s", req.Host, p["gameId"]), game.CountPlayersReady(c)}
+
 		r.HTML(200, "thanks", templateData)
 	})
 
 	m.Get("/play/:gameId", oauth2.LoginRequired, func(s sessions.Session, t oauth2.Tokens, r render.Render, p martini.Params) {
-		key := GameKey(p["gameId"])
-		game := LoadManfredGame(key, c)
-
-		r.HTML(404, "missingGame", nil)
-
 		templateData := NewTemplateData(s)
-		templateData.Data = game
-		r.HTML(200, "play", templateData)
+
+		key := GameKey(p["gameId"])
+
+		game := LoadManfredGame(key, c)
+		if game != nil {
+			game.AddPlayer(s.Get("userName").(string), c) // This should be the saved handle for the user, but just use this for now
+
+			templateData.Data = game
+			r.HTML(200, "play", templateData)
+		} else {
+			r.HTML(404, "missingGame", templateData)
+		}
 	})
 
 	m.Run()
