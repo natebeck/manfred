@@ -85,8 +85,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.Do("SET", uuid, j)
-		c.Do("EXPIRE", uuid, 43200) // Expire after 1 day
+
+		key := GameKey(uuid)
+		c.Do("SET", key, j)
+		c.Do("EXPIRE", key, 43200) // Expire after 1 day
 		r.Redirect("/thanks/" + uuid)
 	})
 
@@ -130,6 +132,10 @@ func TwitchOAuth(opts *oauth2.Options) martini.Handler {
 	opts.AuthUrl = "https://api.twitch.tv/kraken/oauth2/authorize"
 	opts.TokenUrl = "https://api.twitch.tv/kraken/oauth2/token"
 	return oauth2.NewOAuth2Provider(opts)
+}
+
+func GameKey(id string) string {
+	return "game:" + id
 }
 
 type TwitchUser struct {
