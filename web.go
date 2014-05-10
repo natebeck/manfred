@@ -64,18 +64,27 @@ func main() {
 			userName = u.DisplayName
 		}
 
-		r.HTML(200, "home", userName)
+		templateData := TemplateData{}
+		templateData.Name = userName.(string)
+		r.HTML(200, "home", templateData)
 	})
 
-	m.Get("/newGame", oauth2.LoginRequired, func(r render.Render) {
-		r.HTML(200, "newGame", nil)
+	m.Get("/newGame", oauth2.LoginRequired, func(s sessions.Session, r render.Render) {
+		templateData := TemplateData{}
+		templateData.Name = s.Get("userName").(string)
+		r.HTML(200, "newGame", templateData)
 	})
 
-	m.Post("/createGame", oauth2.LoginRequired, func(c redis.Conn, r render.Render, req *http.Request) {
+	m.Post("/createGame", oauth2.LoginRequired, func(c redis.Conn, t oauth2.Tokens, r render.Render, req *http.Request) {
+		u, err := GetTwitchUser(t.Access())
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		uuid := uniuri.NewLen(8)
 		mg := ManfredGame{}
 		mg.UUID = uuid
-		mg.StreamerName = "Streamer"
+		mg.StreamerName = u.DisplayName
 		mg.Description = req.PostFormValue("description")
 		mg.Game = req.PostFormValue("game")
 		// mg.MustFollow = req.PostFormValue("mustFollow")
@@ -92,12 +101,33 @@ func main() {
 		r.Redirect("/thanks/" + uuid)
 	})
 
-	m.Get("/thanks/:gameId", oauth2.LoginRequired, func(r render.Render, p martini.Params, req *http.Request) {
-		r.HTML(200, "thanks", fmt.Sprintf("http://%s/play/%s", req.Host, p["gameId"]))
+	m.Get("/thanks/:gameId", oauth2.LoginRequired, func(s sessions.Session, r render.Render, p martini.Params, req *http.Request) {
+		templateData := TemplateData{}
+		templateData.Name = s.Get("userName").(string)
+		templateData.Data = fmt.Sprintf("http://%s/play/%s", req.Host, p["gameId"])
+		r.HTML(200, "thanks", templateData)
 	})
 
-	m.Get("/play/:gameId", oauth2.LoginRequired, func(t oauth2.Tokens, r render.Render, p martini.Params) {
-		r.HTML(200, "play", nil)
+	m.Get("/play/:gameId", oauth2.LoginRequired, func(s sessions.Session, t oauth2.Tokens, r render.Render, p martini.Params) {
+		var game ManfredGame
+		key := GameKey(p["gameId"])
+		value, err := c.Do("GET", key)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if value == nil {
+			r.HTML(404, "missingGame", nil)
+			return
+		}
+
+		err = json.Unmarshal(value.([]byte), &game)
+
+		templateData := TemplateData{}
+		templateData.Name = s.Get("userName").(string)
+		templateData.Data = game
+		r.HTML(200, "play", templateData)
 	})
 
 	m.Run()
@@ -154,4 +184,9 @@ type ManfredGame struct {
 	Game         string
 	MustFollow   bool
 	MustSub      bool
+}
+
+type TemplateData struct {
+	Name string
+	Data interface{}
 }
