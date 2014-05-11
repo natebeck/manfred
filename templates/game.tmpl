@@ -1,0 +1,50 @@
+
+<div class="row">
+  <div class="alert alert-dismissable alert-info">
+    <button type="button" class="close" data-dismiss="alert">×</button>
+    <h4>Copy and Paste this Link to your Twitch Chat</h4>
+    <input id="urlTI" type="text" class="form-control" style="text-align: center" value="{{ .Data.GameUrl }}" disabled>
+  </div>
+</div>
+
+<div style="row col-lg-10 col-lg-offset-1">
+  <h1>{{ .Data.Game.Description }}</h1>
+  <h3>with {{ .Data.Game.StreamerName }}</h3>
+</div>
+<hr />
+
+<div class="row">
+  <div class="col-lg-3 col-lg-offset-1">
+    <div class="panel panel-success player-header">
+      <div class="panel-heading">
+        <h3 class="panel-title">Players Ready</h3>
+      </div>
+      <div class="panel-body player-body">
+        {{ .Data.PlayerCount }}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <form class="form-horizontal">
+      <fieldset>
+        <div class="form-group">
+          <label for="inputPlayerCount" class="col-lg-2 control-label">How Many?</label>
+          <div class="col-lg-10">
+            <input type="text" class="form-control bfh-number" value="7" id="inputPlayerCount">
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="col-lg-10 col-lg-offset-2">
+            <button type="submit" class="btn btn-primary">Select Players</button>
+          </div>
+        </div>
+      </fieldset>
+    </form>
+  </div>
+<div>
+
+<div class="row">
+  <div class="col-lg-10 col-lg-offset-1">
+
+  </div>
+</div>
