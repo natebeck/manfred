@@ -85,20 +85,21 @@ func main() {
 		key := GameKey(uuid)
 		c.Do("SET", key, j)
 		c.Do("EXPIRE", key, 43200) // Expire after 1 day
-		r.Redirect("/thanks/" + uuid)
+		r.Redirect("/game/" + uuid)
 	})
 
-	m.Get("/thanks/:gameId", oauth2.LoginRequired, func(s sessions.Session, r render.Render, p martini.Params, req *http.Request) {
+	m.Get("/game/:gameId", oauth2.LoginRequired, func(s sessions.Session, r render.Render, p martini.Params, req *http.Request) {
 		key := GameKey(p["gameId"])
 		game := LoadManfredGame(key, c)
 
 		templateData := NewTemplateData(s)
 		templateData.Data = struct {
+			Game        ManfredGame
 			GameUrl     string
 			PlayerCount int64
-		}{fmt.Sprintf("http://%s/play/%s", req.Host, p["gameId"]), game.CountPlayersReady(c)}
+		}{*game, fmt.Sprintf("http://%s/play/%s", req.Host, p["gameId"]), game.CountPlayersReady(c)}
 
-		r.HTML(200, "thanks", templateData)
+		r.HTML(200, "game", templateData)
 	})
 
 	m.Get("/play/:gameId", oauth2.LoginRequired, func(s sessions.Session, t oauth2.Tokens, r render.Render, p martini.Params) {
@@ -135,8 +136,8 @@ func main() {
 		game.AddPlayer(handle, c) // This should be the saved handle for the user, but just use this for now
 
 		templateData.Data = struct {
-			Game   ManfredGame
-			Handle string
+			Game     ManfredGame
+			Handle   string
 			SetupUrl string
 		}{*game, handle, setupUrl}
 		r.HTML(200, "play", templateData)

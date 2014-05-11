@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	_ "github.com/codegangsta/envy/autoload"
 	"github.com/garyburd/redigo/redis"
 	"io/ioutil"
 	"log"
