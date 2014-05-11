@@ -1,8 +1,8 @@
 
 <div class="row">
-  <div class="alert alert-dismissable alert-info">
+  <div class="alert alert-dismissable alert-success col-lg-8 col-lg-offset-2">
     <button type="button" class="close" data-dismiss="alert">×</button>
-    <h4>Copy and Paste this Link to your Twitch Chat</h4>
+    <h4 style="text-align: center;">Copy and Paste this Link to your Twitch Chat</h4>
     <input id="urlTI" type="text" class="form-control" style="text-align: center" value="{{ .Data.GameUrl }}" disabled>
   </div>
 </div>
@@ -45,6 +45,34 @@
 
 <div class="row">
   <div class="col-lg-10 col-lg-offset-1">
-
+    <table class="table table-striped table-hover ">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Twitch Name</th>
+          <th>Game Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="#"><i class="fa fa-refresh fa-2x"></i></a></td>
+          <td>Player1</td>
+          <td><a href="#">Player1#1168</a></td>
+        </tr>
+        <tr>
+          <td><a href="#"><i class="fa fa-refresh fa-2x"></i></a></td>
+          <td>Player2</td>
+          <td><a href="#">Player2#1252</a></td>
+        </tr>
+        <tr>
+          <td><a href="#"><i class="fa fa-refresh fa-2x"></i></a></td>
+          <td>Player3</td>
+          <td><a href="#">Player3#1500</a></td>
+        </tr>
+      </tbody>
+    </table> 
+    <div class="">
+      <button type="submit" class="btn btn-success">Lock In Players</button>
+    </div>
   </div>
 </div>
