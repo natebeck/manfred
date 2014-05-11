@@ -123,14 +123,14 @@ func main() {
 			return
 		}
 
-		handle := player.Handles[game.Game]
+		handle, ok := player.Handles[game.Game]
+
+		if !ok || handle == "" {
+			r.Redirect(setupUrl)
+			return
+		}
 
 		log.Println("Here be the handle! " + handle)
-		// How to check if the handle is not present in the Handles map...
-		//if player == nil {
-		//	r.Redirect(setupUrl)
-		//	return
-		//}
 
 		game.AddPlayer(handle, c) // This should be the saved handle for the user, but just use this for now
 
