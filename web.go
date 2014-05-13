@@ -92,12 +92,24 @@ func main() {
 		key := GameKey(p["gameId"])
 		game := LoadManfredGame(key, c)
 
+		playerIds := game.GetPlayers(c)
+
+		players := make([]ManfredPlayer, len(playerIds))
+
+		for i, id := range playerIds {
+			p := LoadManfredPlayer(id, c)
+			if p != nil {
+				players[i] = *p
+			}
+		}
+
 		templateData := NewTemplateData(s)
 		templateData.Data = struct {
 			Game        ManfredGame
 			GameUrl     string
 			PlayerCount int64
-		}{*game, fmt.Sprintf("http://%s/play/%s", req.Host, p["gameId"]), game.CountPlayersReady(c)}
+			Players     []ManfredPlayer
+		}{*game, fmt.Sprintf("http://%s/play/%s", req.Host, p["gameId"]), game.CountPlayersReady(c), players}
 
 		r.HTML(200, "game", templateData)
 	})
@@ -133,7 +145,9 @@ func main() {
 
 		log.Println("Here be the handle! " + handle)
 
-		game.AddPlayer(handle, c) // This should be the saved handle for the user, but just use this for now
+		playerTwitchId := strconv.FormatInt(s.Get("twitchId").(int64), 10)
+
+		game.AddPlayer(playerTwitchId, c) // This should be the saved handle for the user, but just use this for now
 
 		templateData.Data = struct {
 			Game     ManfredGame
@@ -180,6 +194,7 @@ func main() {
 		if player == nil {
 			player = new(ManfredPlayer)
 			player.Handles = make(map[string]string)
+			player.Handles["TWITCH"] = s.Get("userName").(string)
 		}
 
 		player.Handles[req.PostFormValue("game")] = req.PostFormValue("handle") // Is there some sort of validation / santization we should be doing here?

@@ -54,21 +54,13 @@
         </tr>
       </thead>
       <tbody>
+	  {{range .Data.Players}}
         <tr>
           <td><a href="#"><i class="fa fa-refresh fa-2x"></i></a></td>
-          <td>Player1</td>
-          <td><a href="#">Player1#1168</a></td>
+          <td>{{.Handles.TWITCH}}</td>
+          <td><a href="#">{{index .Handles $.Data.Game.Game}}</a></td>
         </tr>
-        <tr>
-          <td><a href="#"><i class="fa fa-refresh fa-2x"></i></a></td>
-          <td>Player2</td>
-          <td><a href="#">Player2#1252</a></td>
-        </tr>
-        <tr>
-          <td><a href="#"><i class="fa fa-refresh fa-2x"></i></a></td>
-          <td>Player3</td>
-          <td><a href="#">Player3#1500</a></td>
-        </tr>
+	  {{end}}
       </tbody>
     </table> 
     <div class="">

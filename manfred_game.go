@@ -48,6 +48,24 @@ func (g ManfredGame) CountPlayersReady(c redis.Conn) int64 {
 	return resp.(int64)
 }
 
+func (g ManfredGame) GetPlayers(c redis.Conn) (result []TwitchUserKey) {
+	resp, err := c.Do("SMEMBERS", g.GetPlayersSetKey())
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, h := range resp.([]interface{}) {
+		id, ok := h.([]byte)
+		if !ok {
+			log.Fatal("Bad handle from redis for game: " + g.GetPlayersSetKey())
+		}
+		result = append(result, TwitchUserKey(id))
+	}
+
+	return
+}
+
 func LoadManfredGame(key GameKey, c redis.Conn) (game *ManfredGame) {
 	value, err := c.Do("GET", key)
 	if err != nil {
