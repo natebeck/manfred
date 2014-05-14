@@ -30,7 +30,7 @@
         <div class="form-group">
           <label for="inputPlayerCount" class="col-lg-2 control-label">How Many?</label>
           <div class="col-lg-10">
-            <input type="text" class="form-control bfh-number" value="7" id="inputPlayerCount">
+            <input type="text" class="form-control bfh-number" value="{{.Data.Game.PlayerCount}}" id="inputPlayerCount">
           </div>
         </div>
         <div class="form-group">
@@ -68,3 +68,9 @@
     </div>
   </div>
 </div>
+
+<script>
+	window.gamePageConfig = {
+		gameName: {{.Data.Game.Game}}
+	};
+</script>

@@ -74,25 +74,71 @@ func main() {
 		mg.StreamerName = u.DisplayName
 		mg.Description = req.PostFormValue("description")
 		mg.Game = req.PostFormValue("game")
+		mg.PlayerCount = 7 // At some point this could be dynamic based off of the game
 		// mg.MustFollow = req.PostFormValue("mustFollow")
 		// mg.MustSub = req.PostFormValue("mustSub")
 
-		j, err := json.Marshal(mg)
+		mg.Save(c)
+
+		r.Redirect("/game/" + uuid)
+	})
+
+	m.Put("/game/:gameId", oauth2.LoginRequired, func(s sessions.Session, r render.Render, p martini.Params, req *http.Request) (int, string) {
+		count, err := strconv.ParseInt(req.PostFormValue("playerCount"), 10, 8)
+		if err != nil {
+			return 404, "{\"success\": false, \"error\": \"" + err.Error() + "\"}"
+		}
+
+		key := GameKey(p["gameId"])
+		game := LoadManfredGame(key, c)
+
+		if game == nil {
+			return 404, "{\"success\": false, \"error\": \"Unable to find a game with that id\"}"
+		}
+
+		game.PlayerCount = int(count)
+		game.Save(c) // This will extend the expiration time of the game. We might not want that...
+
+		return 200, "{\"success\": true}"
+	})
+
+	m.Get("/game/:gameId/info", oauth2.LoginRequired, func(s sessions.Session, r render.Render, p martini.Params, req *http.Request) (int, string) {
+		key := GameKey(p["gameId"])
+		game := LoadManfredGame(key, c)
+
+		if game == nil {
+			return 404, "{\"success\": false, \"error\": \"Unable to find a game with that id\"}"
+		}
+
+		playerIds := game.ChooseAndGetPlayers(c)
+
+		players := make([]ManfredPlayer, len(playerIds))
+
+		for i, id := range playerIds {
+			p := LoadManfredPlayer(id, c)
+			if p != nil {
+				players[i] = *p
+			}
+		}
+
+		info := struct {
+			PlayerCount int64
+			Players     []ManfredPlayer
+		}{game.CountPlayersReady(c), players}
+
+		infoString, err := json.Marshal(info)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		key := GameKey(uuid)
-		c.Do("SET", key, j)
-		c.Do("EXPIRE", key, 43200) // Expire after 1 day
-		r.Redirect("/game/" + uuid)
+		return 200, string(infoString)
 	})
 
 	m.Get("/game/:gameId", oauth2.LoginRequired, func(s sessions.Session, r render.Render, p martini.Params, req *http.Request) {
 		key := GameKey(p["gameId"])
 		game := LoadManfredGame(key, c)
 
-		playerIds := game.GetPlayers(c)
+		playerIds := game.ChooseAndGetPlayers(c)
 
 		players := make([]ManfredPlayer, len(playerIds))
 
@@ -147,7 +193,8 @@ func main() {
 
 		playerTwitchId := strconv.FormatInt(s.Get("twitchId").(int64), 10)
 
-		game.AddPlayer(playerTwitchId, c) // This should be the saved handle for the user, but just use this for now
+		game.AddPlayer(playerTwitchId, c)
+		game.AddTestPlayer(game.Game, c) // Add this for testing so that the number of players will always increase
 
 		templateData.Data = struct {
 			Game     ManfredGame
