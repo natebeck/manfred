@@ -75,5 +75,9 @@ func LoadManfredPlayer(key TwitchUserKey, c redis.Conn) (player *ManfredPlayer) 
 type TwitchUserKey string
 
 func (t TwitchUserKey) String() string {
-	return "twitchUser:" + string(t)
+	return string(t)
+}
+
+func ConvertToTwitchUserKey(t string) TwitchUserKey {
+	return TwitchUserKey("twitchUser:" + string(t))
 }

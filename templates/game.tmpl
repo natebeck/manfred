@@ -25,21 +25,24 @@
     </div>
   </div>
   <div class="col-lg-7">
-    <form class="form-horizontal">
+    <form class="form-horizontal" method="POST" action="/game/{{ .Data.Game.UUID }}">
       <fieldset>
         <div class="form-group">
           <label for="inputPlayerCount" class="col-lg-2 control-label">How Many?</label>
-          <div class="col-lg-10">
-            <input type="text" class="form-control bfh-number" value="{{.Data.Game.PlayerCount}}" id="inputPlayerCount">
-          </div>
+          <div class="col-lg-7">
+            <input type="text" class="form-control bfh-number" value="{{.Data.Game.PlayerCount}}" id="inputPlayerCount" name="inputPlayerCount">
         </div>
-        <div class="form-group">
-          <div class="col-lg-10 col-lg-offset-2">
-            <button type="submit" class="btn btn-primary">Select Players</button>
+          <div class="col-lg-3">
+            <button type="submit" class="btn btn-primary">Update Count</button>
           </div>
         </div>
       </fieldset>
     </form>
+    <div class="row">
+        <form method="POST" action="/game/{{ .Data.Game.UUID }}/players">
+            <button type="submit" class="btn btn-primary col-lg-10 col-lg-offset-1">Select All Players</button>
+        </form>
+    </div>
   </div>
 <div>
 
@@ -54,11 +57,11 @@
         </tr>
       </thead>
       <tbody>
-	  {{range .Data.Players}}
+	  {{range $id, $player := .Data.Players}}
         <tr>
-          <td><a href="#"><i class="fa fa-refresh fa-2x"></i></a></td>
-          <td>{{.Handles.TWITCH}}</td>
-          <td><a href="#">{{index .Handles $.Data.Game.Game}}</a></td>
+          <td><a href="#" class="refresh" data-twitch-id="{{ $id }}"><i class="fa fa-refresh fa-2x"></i></a></td>
+          <td>{{$player.Handles.TWITCH}}</td>
+          <td><a href="#">{{index $player.Handles $.Data.Game.Game}}</a></td>
         </tr>
 	  {{end}}
       </tbody>
@@ -71,6 +74,7 @@
 
 <script>
 	window.gamePageConfig = {
-		gameName: {{.Data.Game.Game}}
+		gameName: {{.Data.Game.Game}},
+        id: {{.Data.Game.UUID}}
 	};
 </script>
